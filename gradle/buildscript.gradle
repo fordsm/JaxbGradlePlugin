@@ -1,0 +1,13 @@
+// Executed in context of buildscript
+repositories {
+    maven {url 'http://artifactory/remote-repos'}
+    maven {url 'http://repo.jfrog.org/artifactory/gradle-plugins'}
+    maven {url 'http://dl.bintray.com/content/netflixoss/external-gradle-plugins/'}
+}
+
+dependencies {
+    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.4'
+    classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.6.1'
+    //classpath 'gradle-release:gradle-release:1.1.5'
+    classpath 'org.ajoberstar:gradle-git:0.5.0'
+}

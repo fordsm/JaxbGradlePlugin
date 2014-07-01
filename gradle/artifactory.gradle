@@ -1,0 +1,33 @@
+apply plugin: 'artifactory'
+apply plugin: 'maven'
+
+configurations{
+	published
+}
+
+artifactory {
+	contextUrl = 'http://artifactory.lifeway.org'
+
+	publish {
+		repository {
+			repoKey = artifactoryRepoKey
+			username = 'artifactorydeployer'
+			password = '{DESede}EilxQe8+xe0='
+			ivy {
+				artifactLayout = '[organization]/[module]/[revision]/[module](-[classifier])-[revision].[ext]'
+				mavenCompatible = true
+			  }
+		}
+		defaults {
+			publishConfigs('archives', 'published')
+			publishPom = true //Publish generated POM files to Artifactory (true by default)
+			publishIvy = false //Publish generated Ivy descriptor files to Artifactory (true by default)
+		}
+	}
+	resolve {
+		repository {
+			repoKey = 'repo' //The Artifactory (preferably virtual) repository key to resolve from
+
+		}
+	}
+}

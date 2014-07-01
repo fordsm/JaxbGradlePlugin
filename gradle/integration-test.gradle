@@ -1,0 +1,22 @@
+sourceSets {
+  integrationTest { sourceSet ->
+    ["java", "groovy", "scala", "resources"].each {
+      if (!sourceSet.hasProperty(it)) return
+      sourceSet."$it".srcDir file("src/integration-test/${it}")
+    }
+  }
+}
+
+dependencies {
+  integrationTestCompile sourceSets.main.output
+  integrationTestCompile sourceSets.test.output
+  integrationTestCompile configurations.testCompile
+  integrationTestRuntime configurations.testRuntime
+}
+
+task integrationTest(type: Test) {
+  testClassesDir = sourceSets.integrationTest.output.classesDir
+  classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+check.dependsOn integrationTest

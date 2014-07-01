@@ -1,0 +1,84 @@
+import java.text.DecimalFormat
+
+// CodeNarc
+apply plugin: 'codenarc'
+codenarc {
+    ignoreFailures = true
+    configFile = rootProject.file('codequality/codenarc.xml')
+}
+
+// FindBugs
+apply plugin: 'findbugs'
+findbugs {
+    ignoreFailures = true
+}
+
+//JaCoCo
+apply plugin: 'jacoco'
+
+task jacocoCheck (dependsOn: tasks.jacocoTestReport){
+	doLast{
+		def coverageExcludes = ['.*\\$\\d.java', '*Spec.groovy']
+		XmlParser parser = new XmlParser(false, false)
+		parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		parser.setFeature("http://xml.org/sax/features/namespaces", false)
+		parser.setFeature("http://xml.org/sax/features/external-general-entities", false)
+		def coverage = parser.parse("${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+		def df = new DecimalFormat("#.##")
+		def minLineCoverageNum = new BigDecimal(minLineCoverage) //.round(new MathContext(3))
+		def minBranchCoverageNum = new BigDecimal(minBranchCoverage) //.round(new MathContext(3))
+
+		def lineCoverageCounter = coverage.counter.find{ it.@type == "INSTRUCTION" }
+		def lineMissed =  lineCoverageCounter.@missed.toInteger()
+		def lineCovered = lineCoverageCounter.@covered.toInteger()
+		def linePct = (lineCovered/(lineCovered + lineMissed)) * 100
+
+
+		def branchCoverageCounter = coverage.counter.find{ it.@type == "BRANCH" }
+		def branchCovered = 0
+		def branchMissed = 0
+		def branchPct = 100
+		if(branchCoverageCounter) {
+			branchMissed =  branchCoverageCounter?.@missed.toInteger()
+			branchCovered =  branchCoverageCounter?.@covered.toInteger()
+			branchPct = (branchCovered/(branchCovered + branchMissed)) * 100
+		}
+
+    if( lineCovered < linePct || branchPct < minBranchCoverageNum) {
+			def errorMsg = "*** Test coverage insufficient ***" +
+				"\n Target line coverage: " + new DecimalFormat("#.##").format(minLineCoverageNum) + "%" +
+				" ... achieved: " + new DecimalFormat("#.##").format(linePct) + "%" +
+				"\n Target branch coverage: " + new DecimalFormat("#.##").format(minBranchCoverageNum) + "%" +
+				" ... achieved: " + new DecimalFormat("#.##").format(branchPct) + "%" +
+				"\n For complete report see: " +
+				"\n ./build/reports/cobertura/index.html"
+			throw new RuntimeException(errorMsg)
+		}
+
+		println "*** Test coverage Success! ***\nTotal line coverage: " + df.format(linePct) + "%\nTotal branch coverage: " + df.format(branchPct) + "%"
+	}
+}
+
+afterEvaluate {
+	check.dependsOn jacocoCheck
+}
+
+
+jacocoTestReport {
+	group = "reporting"
+	description = "Generate Jacoco coverage reports after running tests."
+	reports {
+		xml.enabled true
+		html.enabled true
+		csv.enabled false
+	}
+//	def sourceDirs = []
+//	if(plugins.hasPlugin('java')){
+//		sourceDirs.add(files(sourceSets.main.allJava.srcDirs))
+//	}
+//	if(plugins.hasPlugin('groovy')){
+//		sourceDirs.add(files(sourceSets.main.allGroovy.srcDirs))
+//	}
+//	additionalSourceDirs = files(sourceDirs)
+	sourceSets project.sourceSets.main
+}
